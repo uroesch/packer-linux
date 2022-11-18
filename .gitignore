@@ -1,0 +1,9 @@
+.rake_tasks~
+.access^
+**/.access^
+iso/**/*.iso
+images/*
+log/*
+artifacts/*
+http/*
+
