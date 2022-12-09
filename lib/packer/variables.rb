@@ -17,7 +17,7 @@ module Packer
       @vars = {}
     end
 
-    def parse 
+    def parse
       begin
         File.exist?(@file)
         content = File.read(@file)
@@ -37,10 +37,12 @@ module Packer
     end
 
     def overrides
+      boot_wait
       dist_name
       full_name
+      ssh_wait_timeout
       @vars
-    end 
+    end
 
     def full_name
       minor = @vars.fetch('version_minor', nil)
@@ -49,6 +51,14 @@ module Packer
 
     def dist_name
       @vars['dist_name'] = @vars.values_at('name', 'version').join('_')
+    end
+
+    def boot_wait
+      @vars['boot_wait'] = Packer::Host.is_virtual? ? '5s' : '3s'
+    end
+
+    def ssh_wait_timeout
+      @vars['ssh_wait_timeout'] = Packer::Host.is_virtual? ? '45m' : '30m'
     end
   end
 end

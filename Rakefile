@@ -1,13 +1,13 @@
 # -----------------------------------------------------------------------------
 # Libraries
 # -----------------------------------------------------------------------------
+$LOAD_PATH.unshift(File.expand_path('lib'))
 require 'yaml'
 require 'json'
 require 'erb'
 require 'ostruct'
-require_relative 'lib/packer/iso'
-require_relative 'lib/packer/variables'
-require_relative 'lib/password_factory'
+require 'packer'
+require 'password_factory'
 
 # -----------------------------------------------------------------------------
 # Globals
@@ -65,8 +65,15 @@ def override_variables(config)
   config
 end
 
+def parse_auto_config
+  hcl_files = Rake::FileList["#{PACKER_HCL_DIR}/*.auto.pkrvars.hcl"]
+  hcl_files.inject({}) do |config, hcl_file|
+    config.merge(Packer::Variables.from(hcl_file))
+  end
+end
+
 def assemble_config(hcl_file)
-    config = Packer::Variables.from(hcl_file)
+    config = parse_auto_config.merge(Packer::Variables.from(hcl_file))
     config = override_variables(config)
     iso_file = File.join(ISO_DIR, config['dist_name'], config['iso_file'])
     config['volume_id'] = Packer::ISO.volume_id(iso_file)
@@ -140,8 +147,39 @@ namespace :clean do
   end
 end
 
+namespace :install do
+  desc "Install novnc systemd service"
+  task :novnc => [ :package, :service ]
+
+  task :scripts do
+    sh %(sudo install -o root -g root -m 755 install/novnc_proxy /usr/local/bin)
+    sh %(sudo install -o root -g root -m 755 install/vnc-proxy.sh  /usr/local/bin)
+  end
+
+  task :service => :scripts do
+    sh %(sudo install -o root -g root -m 644 install/novnc.service /etc/systemd/system/)
+    sh %(sudo systemctl daemon-reload)
+    sh %(sudo systemctl enable novnc.service)
+  end
+
+  task :package do
+    sh %(sudo apt install novnc)
+  end
+end
+
 namespace :build do
   task :find do
+  end
+end
+
+namespace :iso do
+  desc 'List all ISO urls from the packer variable files'
+  task :list_urls do
+    Rake::FileList["#{PACKER_HCL_DIR}/*.pkrvars.hcl"].each do |hcl|
+      config = Packer::Variables.from(hcl)
+      url    = File.join(config.values_at('iso_base_url', 'iso_file'))
+      puts url if url.start_with?(%r{https?://})
+    end
   end
 end
 
@@ -149,6 +187,7 @@ end
 # Tasks
 # -----------------------------------------------------------------------------
 task :default => :build
+
 
 desc "Only the various configuration files"
 task :config do
@@ -172,6 +211,8 @@ task :build => [LOG_DIR, :config] do
        %( -var "firmware=#{FIRMWARE}" ) +
        %( -var "accelerator=#{accelerator}" ) +
        %( -var "volume_id=#{config['volume_id']}" ) +
+       %( -var "boot_wait=#{config['boot_wait']}" ) +
+       %( -var "ssh_wait_timeout=#{config['ssh_wait_timeout']}" ) +
        %( -var-file "#{hcl}" ) +
        %( -only "#{ONLY}" ) +
        %( #{PACKER_HCL_DIR} ) do |ok,res| end

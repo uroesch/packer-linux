@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------
-# Variables 
+# Variables
 # -----------------------------------------------------------------------------
 variable "cpu" {
   type        = number
@@ -114,6 +114,17 @@ variable "ssh_password" {
   description = "SSH password used by provisioners."
 }
 
+variable "ssh_wait_timeout" {
+  type        = string
+  default     = "30m"
+  sensitive   = true
+  description = "How long to wait until ssh gives up waiting during stage one; default is '30m'."
+  validation {
+    condition     = can(regex("^[0-9]+m$", var.ssh_wait_timeout))
+    error_message = "The 'ssh_wait_timeout' format must be '<digit>[<digit>]m'."
+  }
+}
+
 variable "ssh_username" {
   type        = string
   description = "SSH user used by provisioners."
@@ -151,13 +162,23 @@ variable "volume_id" {
 variable "firmware" {
   type        = string
   default     = "bios"
-  description = "The boot method is either 'bios' (default) or 'efi'"
+  description = "The boot method is either 'bios' (default) or 'efi'."
 }
 
 variable "accelerator" {
   type        = string
   default     = "kvm"
-  description = "Acceleration type for qemu virtualization; default 'kvm'"
+  description = "Acceleration type for qemu virtualization; default 'kvm'."
+}
+
+variable "boot_wait" {
+  type        = string
+  default     = "3s"
+  description = "Boot wait command for base image. Set to '3s' for HW and '5s' for VMs."
+  validation {
+    condition     = can(regex("^[0-9]+s$", var.boot_wait))
+    error_message = "The 'boot_wait' format must be '<digit>[<digit>]s'."
+  }
 }
 
 variable "bios_boot_command" {
@@ -209,7 +230,7 @@ variable "qemuargs" {
   type        = list(list(string))
   description = "Default qemuargs for the build"
   default     = [ [ "-vga", "qxl" ] ]
- 
+
 }
 
 # -----------------------------------------------------------------------------
@@ -222,13 +243,14 @@ locals {
   output_directory = "${local.output_base}/${local.dist_name}-${var.target}"
   config_file      = "${local.dist_name}/${var.answer_file}"
   iso_dir          = "${path.root}/../${var.iso_base_dir}/${local.dist_name}"
+  iso_target_path  = "${local.iso_dir}/${var.iso_file}"
   volume_id        = replace(var.volume_id, " ", "\\x20")
   boot_command     = {
     "bios" = format(join("", var.bios_boot_command), local.config_file),
     "efi"  = format(join("", var.efi_boot_command),  local.config_file, local.volume_id)
   }
   iso_urls         = [
-    "${local.iso_dir}/${var.iso_file}",
+    "${local.iso_target_path}",
     "${var.iso_base_url}/${var.iso_file}"
   ]
 }

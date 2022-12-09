@@ -3,7 +3,7 @@
 **/.access^
 iso/**/*.iso
 images/*
-log/*
+logs/*
 artifacts/*
 http/*
 

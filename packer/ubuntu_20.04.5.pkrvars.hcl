@@ -1,23 +1,14 @@
 # -----------------------------------------------------------------------------
 # Ubuntu 20.04 Packer Variable File
 # -----------------------------------------------------------------------------
-firmware          = "efi"
-destination_dir   = "artifacts"
-disk_path         = "/dev/vda"
-disk_size         = "71680"
-headless          = "true"
 http_dir          = "http"
 iso_checksum      = "file:iso/ubuntu_20.04/ubuntu-20.04.5-live-server-amd64.iso.sha256"
 iso_file          = "ubuntu-20.04.5-live-server-amd64.iso"
 iso_base_url      = "https://releases.ubuntu.com/20.04/"
 name              = "ubuntu"
-root_password     = "F00bar123"
-ssh_password      = "F00bar123"
 ssh_username      = "ubuntu"
-target            = "server"
 version           = "20.04"
 version_minor     = "5"
-vg_name           = "system"
 code_name         = "focal"
 answer_file       = ""
 bios_boot_command = [

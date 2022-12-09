@@ -1,0 +1,13 @@
+# -----------------------------------------------------------------------------
+# Comman variables for all setups
+# -----------------------------------------------------------------------------
+firmware        = "efi"
+destination_dir = "artifacts"
+disk_path       = "/dev/vda"
+disk_size       = "48000"
+headless        = "true"
+http_dir        = "http"
+root_password   = "F00bar123"
+ssh_password    = "F00bar123"
+target          = "server"
+vg_name         = "system"

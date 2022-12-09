@@ -1,0 +1,10 @@
+[Unit]
+Description=noVNC service for linux image build
+After=network.target
+
+[Service]
+ExecStart=/bin/bash -x /usr/local/bin/vnc-proxy.sh --port 80 --web-root /usr/share/novnc --service
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
