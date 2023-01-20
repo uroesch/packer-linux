@@ -12,6 +12,7 @@ require 'password_factory'
 # -----------------------------------------------------------------------------
 # Globals
 # -----------------------------------------------------------------------------
+VERSION        = '0.11.0'
 TEMPLATE_DIR   = 'templates'
 PACKER_HCL_DIR = 'packer'
 BUILD          = Regexp.new(ENV.fetch('BUILD', '.*'))
@@ -131,21 +132,40 @@ directory LOG_DIR
 # Namespaces
 # -----------------------------------------------------------------------------
 namespace :clean do
-  desc "Clean up all generated files"
-  task :all => [:build_cache, :logs]
+  desc 'Clean up iso, images, logs and cached files'
+  task :all => [:volatile, :images, :iso]
+  
+  desc 'Clean up all volatile files like logs and build cache'
+  task :volatile => [:build_cache, :logs]
 
-  desc "Clean logs"
+  desc 'Clean disk images'
+  task :images do
+    rm Rake::FileList['images/*']
+  end
+
+  desc 'Clean non base build disk images'
+  task :non_base_images do
+    rm Rake::FileList['images/*'].exclude(%r{\.qcow2})
+  end
+
+  desc 'Clean iso images'
+  task :iso do
+    rm Rake::FileList["#{ISO_DIR}/*/*.iso"]
+  end
+
+  desc 'Clean logs'
   task :logs do
     rm_rf LOG_DIR
   end
 
-  desc "Clean build cache"
+  desc 'Clean build cache'
   task :build_cache do
     (destination_dir + %w( packer_cache tmp http)).each do |dir|
       rm_rf dir
     end
   end
 end
+
 
 namespace :install do
   desc "Install novnc systemd service"
