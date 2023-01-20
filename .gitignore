@@ -1,5 +1,7 @@
 .rake_tasks~
 .access^
+*.html
+*.pdf
 **/.access^
 iso/**/*.iso
 images/*

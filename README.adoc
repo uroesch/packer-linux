@@ -1,0 +1,213 @@
+= Build Linux Images with Packer
+:author: Urs Roesch
+:email: roesch@puzzle.ch
+:icons: font
+ifndef::env-github,env-gitlab[]
+:source-highlighter: rouge
+endif::env-github,env-gitlab[]
+ifdef::env-gitlab[]
+:git-base-url: https://git.avectris.com/
+endif::env-gitlab[]
+ifdef::env-github[]
+:git-base-url: https://github.com/
+:tip-caption: :bulb:
+:note-caption: :information_source:
+:important-caption: :heavy_exclamation_mark:
+:caution-caption: :fire:
+:warning-caption: :warning:
+endif::[]
+
+
+[[project_goals]]
+== Project Goals
+
+This project's goal is to build a variety of Linux OS Images using Packer with
+the QEMU/KVM. The focus is to build OS images for a corporate environment where 
+disk layout and the installed packages are as identical as possible. 
+
+A secondary goal is to build images for both BIOS and UEFI machines, but the
+focus is clearly set on the UEFI bulids. 
+
+A strong focus is to keep the CODE as DRY as possible and to try to keep the
+actual configuration for each new release to a minimum.
+
+To keep the post-processing as generic as possible Ansible is used. The Ansible
+code has been decoupled to keep it modular and replaceable.
+
+[[project_scope]]
+== Project Scope
+
+[[target_platforms]]
+=== Target Platforms
+
+This repo contains the packer instructions to build images for the following 
+platforms:
+
+* QEMU (base image)
+* VMware
+* Hyper-V
+* Azure
+
+There are plans to also create images for:
+
+* GCP (Google Compute Platform)
+
+[[os_names]]
+== Supported Operating Systems
+[options="header"]
+|===
+| Full name                  | Build name
+
+| Red Hat Enterprise Linux 7 | rhel_7
+| Red Hat Enterprise Linux 8 | rhel_8
+| Red Hat Enterprise Linux 9 | rhel_9
+| CentOS 7                   | centos_7
+| Rocky Linux 8              | rocky_8
+| Rocky Linux 9              | rocky_9
+| Oracle Linux 7             | oraclelinux_7
+| Oracle Linux 8             | oraclelinux_8
+| Oracle Linux 9             | oraclelinux_8
+| SUSE Enterprise Linux 15.2 | sle_15
+| Ubuntu 18.04 LTS           | ubuntu_18.04
+| Ubuntu 20.04 LTS           | ubuntu_20.04
+| Ubuntu 22.04 LTS           | ubuntu_22.04
+|===
+
+== Features
+* Can build both BIOS and UEFI based images.
+* Uses single GPT partition layout for both builds.
+* Same disklayout for all images.
+* Installation of `cloud-init` packages.
+* Conversion of QEMU qcow2 to Hyper-V (VHDX), Azure (VHD) and VMware (VMDK).
+
+== Dependencies 
+* Docker with container
+  https://hub.docker.com/r/uroesch/docker-packer[uroesch/docker-packer]
+
+or
+
+* Packer
+* Ansible
+* Qemu with kernel extenstion KVM
+* Ruby
+* Rake
+* jq
+
+== Howto
+
+=== Build with docker
+
+The docker container contains the and the corresponding `docker-packer` script
+setup a noVNC websocket which can be used to monitor the progress of the build.
+
+If building one container at the time the URL for connectiong is 
+http://localhost:11180/vnc.html?host=localhost&port=11180
+
+If running on a seperate machine one may open an SSH tunnel to view the content
+with a browser.
+
+==== Build all images 
+
+[source,bash]
+----
+docker-packer rake
+----
+
+The disk images are stored in the directory `images`.
+
+
+==== Build a specific OS
+
+Consult the build name in the <<os_names,operating system table>>.
+
+In this example only Centos 7 is built.
+
+[source,bash]
+----
+docker-packer rake BUILD=centos_7
+----
+
+==== Build only for a specific target
+
+In this example only Ubuntu 20.04 for Azure is built.
+
+NOTE: Requires a qcow2 base image to be present in the `images` directory.
+
+[source,bash]
+----
+docker-packer rake BUILD=centos_7 ONLY="*.azure"
+----
+
+=== Build locally
+
+==== Build all images headless
+
+[source,bash]
+----
+rake
+----
+
+The disk images are stored in the directory `images`.
+
+==== Build image with QEMU window
+
+[source,bash]
+----
+rake HEADLESS=false
+----
+
+===== Build only a specific OS
+
+[source,bash]
+----
+rake BUILD=ubuntu_20.04
+----
+
+==== Build only for a specific target
+
+NOTE: Requires a qcow2 base image to be present in the `images` directory.
+
+[source,bash]
+----
+rake BUILD=centos_7 ONLY='*.vmware'
+----
+
+==== Build image with BIOS firmware
+
+[source,bash]
+----
+rake BUILD=centos_7 FIRMWARE=bios
+----
+
+
+ifdef::env-github,env-gitlab[]
+== More Documents
+* link:documentation/directory_structure.adoc[Directory Structure] 
+* link:documentation/packer_files.adoc[Packer Files] 
+* link:documentation/file_naming_convention.adoc[File Naming Convention] 
+* link:documentation/workflow.adoc[Workflow] 
+endif::env-github,env-gitlab[]
+
+ifndef::env-github,env-gitlab[]
+:leveloffset: +1
+include::documentation/directory_structure.adoc[] 
+include::documentation/packer_files.adoc[] 
+include::documentation/file_naming_convention.adoc[] 
+include::documentation/workflow.adoc[] 
+:leveloffset: -1
+endif::env-github,env-gitlab[]
+
+== Build changes
+
+All parameters are stored under the `<os_name>.pkrvars.hcl` files. 
+e.g for CentOS 8 the file is called  `centos_8.pkrvars.hcl`.
+
+In the `templates` directory the kickstart, preseed and Cloud-Init templates
+are stored. The are ERB templates and use the `config[]` hash to refer to 
+the variables defined in the packer variable files.
+
+Some of the templates are symlinks to make changes for a certain of release
+global. E.g. the Centos 7, Red Hat Enterprise Linux 7 and Oracle Linux 7 share
+a common kickstart file.
+
+// vim: set colorcolumn=80 textwidth=80 : #spell spelllang=en_us :

@@ -1,0 +1,58 @@
+= Workflow
+:author: Urs Roesch
+:email: roesch@puzzle.ch
+:icons: font
+ifdef::env-gitlab[]
+:git-base-url: https://gitlab.com
+endif::env-gitlab[]
+ifdef::env-github[]
+:git-base-url: https://github.com/
+:tip-caption: :bulb:
+:note-caption: :information_source:
+:important-caption: :heavy_exclamation_mark:
+:caution-caption: :fire:
+:warning-caption: :warning:
+endif::[]
+
+
+[plantuml,workflow,svg]
+....
+@startuml
+!include C4_Context.puml
+!include C4_Container.puml
+!define FONTAWESOME https://raw.githubusercontent.com/tupadr3/plantuml-icon-font-sprites/master/font-awesome-5/
+!include FONTAWESOME/terminal.puml
+!include FONTAWESOME/users.puml
+
+
+title Components required for building an OS image
+
+Container(iso_dir, "ISO Directory", "Provides ISO File for build.", $sprite="users")
+Container(packer_dir, "Packer Directory", "Provides packer build instruction files.")
+Container(templates_dir, "Templates Directory", "Provides templated installation instructions.")
+
+System(rakefile, "Rakefile", "Script to help with initalizing build procedures.", $sprite="terminal")
+
+Container(http_dir, "HTTP Directory", "Holds automated installation instructions.")
+
+System(packer, "Packer", "Packer application building the images.")
+
+Container(images_dir, "Images Directory", "Holding the finished images")
+
+Rel(iso_dir, rakefile, "Provides")
+Rel(packer_dir, rakefile, "Provides")
+Rel(templates_dir, rakefile, "Provides")
+
+Rel(rakefile, http_dir, "Populates")
+Rel(rakefile, packer, "Initiates build")
+
+Rel(packer, images_dir, "Stores images")
+
+@enduml
+....
+
+
+
+
+
+// vim: set colorcolumn=80 textwidth=80 : #spell spelllang=en_us :

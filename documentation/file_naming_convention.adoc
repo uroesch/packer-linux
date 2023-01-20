@@ -1,0 +1,21 @@
+= File Naming Convention
+:author: Urs Roesch
+:email: roesch@puzzle.ch
+:icons: font
+ifdef::env-gitlab[]
+:git-base-url: https://gitlab.com
+endif::env-gitlab[]
+ifdef::env-github[]
+:git-base-url: https://github.com/
+:tip-caption: :bulb:
+:note-caption: :information_source:
+:important-caption: :heavy_exclamation_mark:
+:caution-caption: :fire:
+:warning-caption: :warning:
+endif::[]
+
+
+TBD
+
+
+// vim: set colorcolumn=80 textwidth=80 spell spelllang=en_us :

@@ -1,0 +1,235 @@
+= Packer Files
+:author: Urs Roesch
+:email: roesch@puzzle.ch
+:icons: font
+ifdef::env-gitlab[]
+:git-base-url: https://gitlab.com
+endif::env-gitlab[]
+ifdef::env-github[]
+:git-base-url: https://github.com/
+:tip-caption: :bulb:
+:note-caption: :information_source:
+:important-caption: :heavy_exclamation_mark:
+:caution-caption: :fire:
+:warning-caption: :warning:
+endif::[]
+
+The most important files for the configuration of this packer frame work
+are found in the `packer` and `templates` directories. And they are discussed
+in detail here.
+
+
+== Packer Files 
+
+To customize the setup e.g. for adding a new release of an existing 
+distribution there are a couple of files that are of importance under the
+`packer` directory. The scope of this section is limited to the non-shared
+files with the exception of `common.auto.pkrvars.hcl`.  
+
+[[common_auto_pkrvars_hcl]]
+=== `common.auto.pkrvars.hcl`
+
+The settings in `common.auto.pkrvars.hcl` are valid for every image build but
+can be overridden individually in the OS specific `pkrvars.hcl` files described
+further down in the text.
+
+[source,hcl]
+----
+# -----------------------------------------------------------------------------
+# Comman variables for all setups
+# -----------------------------------------------------------------------------
+firmware        = "efi"         <1>
+destination_dir = "artifacts"   <2>
+disk_path       = "/dev/vda"    <3>
+disk_size       = "48000"       <4>
+headless        = "true"        <5>
+http_dir        = "http"        <6>
+root_password   = "F00bar123"   <7>
+ssh_password    = "F00bar123"   <8>
+target          = "server"      <9>
+vg_name         = "system"      <10>
+----
+<1> Define the default firmware to be used when building a machine.
+  Can be overridden on the command line using `FIRMWARE=bios`.
+<2> Defines the destination or work directory where `packer` keeps the
+  in progress disk files. 
+<3> Specify the disk device path to be used for the partitioning.
+<4> Specify the disk size in megabytes.
+<5> Defines if the build should open a QEMU window. For building in a 
+  CI/CD pipeline it should be set to `true`. Set to `false` for debugging.
+<6> Specifies the directory where `packer` will point to for OS configuration
+  files.
+<7> Set the root password for system which support it. Not considered on Ubuntu
+  hosts.
+<8> The password used for logging into the machine during the post-installation
+  phase.
+<9> Specify the disk layout target. Can be overridden with the command line
+  `TARGET=pcidss`.
+<10> Specify the name of the LVM volume group to be used.
+
+
+=== `<distro_N.N>.pkrvars.hcl`
+
+For each OS build a file with the distro name and the release version needs to
+be present. E.g. for a Rocky 9.1 installation the file is called 
+`rocky_9.1.pkrvars.hcl` while for Ubuntu 22.04.1 the file is 
+`ubuntu_22.04.1.pkrvars.hcl`
+
+Below is a annotated Ubuntu `pkrvars` file.
+
+[source,hcl]
+----
+# -----------------------------------------------------------------------------
+# Ubuntu 20.04 Packer Variable File
+# -----------------------------------------------------------------------------
+iso_checksum      = "file:iso/ubuntu_22.04/ubuntu-22.04.1-live-server-amd64.iso.sha256" <1>
+iso_file          = "ubuntu-22.04.1-live-server-amd64.iso" <2>
+iso_base_url      = "https://releases.ubuntu.com/22.04/"   <3>
+name              = "ubuntu"                               <4>
+ssh_username      = "ubuntu"                               <5>
+version           = "22.04"                                <6>
+version_minor     = "1"                                    <7>
+code_name         = "jammy"                                <8>
+answer_file       = ""                                     <9>
+bios_boot_command = [                                      <10>
+  "<enter><enter><f6><esc><wait>",
+  "<bs><bs><bs><bs>",
+  "autoinstall ",
+  "net.ifnames=0 ",
+  "biosdevname=0 ",
+  "ip=dhcp ",
+  "ipv6.disable=1 ",
+  "ds=nocloud-net;",
+  "s=http://{{ .HTTPIP }}:{{ .HTTPPort }}/%s ",
+  "--- <enter>"
+]
+efi_boot_command  = [                                      <11>
+  "c<enter><wait>",
+  "linuxefi /casper/vmlinuz ",
+  "quiet ",
+  "autoinstall ",
+  "net.ifnames=0 ",
+  "biosdevname=0 ",
+  "ip=dhcp ",
+  "ipv6.disable=1 ",
+  "ds=nocloud-net\\;",
+  "s=http://{{ .HTTPIP }}:{{ .HTTPPort }}/%s ",
+  "---- ",  
+  "; inst.stage2=hd:LABEL=%s ",
+  "<enter><wait2>",
+  "initrdefi /casper/initrd<enter><wait3>",
+  "boot<enter><wait>"
+]
+----
+<1> Location of the SHA256 sum file matching the defined IOS file.
+<2> Base name of the ISO file required for the installation.
+<3> Base URL where the ISO file can be downloaded at.
+<4> Distribution name. 
+<5> User name used during the post installation login.
+<6> Distribution version. Generally a single digit with the exception of 
+  Ubuntu releases.
+<7> Minor version of the release. Generally a single digit with the exception of
+  Debian releases.
+<8> Code name of the release. Only used for Ubuntu and Debian releases.
+<9> Answer file defaults to an empty string for subiquity based installers. On
+  Red Hat and derivatives this is set to `kickstart.cfg`.
+<10> Commands simulated during installation of a BIOS build. Only required for
+  non Red Hat based distributions.
+<11> Commands simulated during installation of a EFI build. Only required for
+  non Red Hat based distributions.
+
+== Template Files
+
+For each distribution there is a sub directory present under the templates
+directory. Depending on the distributions deployment method the files stored 
+therein vary. For Red Hat based distributions and their derivatives the only file
+found is called `kickstart.cfg.erb`. Subiquity installers used in newer Ubuntu
+hosts contain two files `user-data.erb` and `meta-data.erb`. Below is a primer
+of the ERB language and the variable present when filling placeholders.
+
+=== Variable Scope
+
+The `Rakefile` contains a parsing module which is putting all the variables
+found in {common_auto_pkrvars_hcl} and OS specific files such as say 
+`ubuntu_22.04.1.pkrvars.hcl`. The variable are stored in a hash called `config`
+where the key is the variable name. 
+
+E.g. `ssh_username = "ubuntu"` from a `pkrvars.hcl` file can be expanded via
+`config['ssh_username']` in the template.
+
+=== `kickstart.cfg`
+
+TBD
+
+=== `user-data`
+
+The `user-data` file is used by subiquity to install the Ubuntu operating 
+system fully automatically. Although some of the syntax is shared with
+`cloud-init` some differences exist.
+
+[source,yaml]
+----
+---
+#cloud-config <1>
+autoinstall:
+  version: 1
+  source:
+    id: ubuntu-server-minimal
+  identity: <2>
+    hostname: <%= config['code_name'] %> 
+    password: <%= PasswordFactory.sha512(config['ssh_password']).hashed %>
+    realname: ubuntu
+    username: <%= config['ssh_username'] %> 
+  keyboard:
+    layout: en
+    variant: us
+  locale: en_US.UTF8
+  refresh-installer:
+    update: no
+  network:
+    ethernets:
+      eth0:
+        dhcp4: true
+        dhcp-identifier: mac
+    version: 2
+  ssh:
+    allow-pw: true
+    install-server: true
+  storage: <3>
+    version: 1
+    swap:
+      size: 0
+    config:
+    # Label
+    # partitioning 
+    # LVM VG
+    # LVM LV
+    # FS
+    # Mount
+
+  late-commands: <4>
+    - "test -b <%= config['disk_path'] %>4 && parted <%= config['disk_path'] %> resizepart 4 100% || :"
+    - sed -i 's/^#*\(send dhcp-client-identifier\).*$/\1 = hardware;/' /target/etc/dhcp/dhclient.conf
+
+  packages: <5>
+    - bc
+    - curl
+    - wget
+    - openssh-server
+    - qemu-guest-agent
+    - eject
+  updates: security
+----
+<1> The file must start with the `#cloud-config` line!
+<2> Mandatory identiy section defaults to the `ubuntu` users.
+<3> Storage section shortend for a better overview. See actual files under
+  template for more information.
+<4> Late command / shell scriptlets executed at the end of the installation.
+<5> Package to be installed additionally to the defined `tasksel` base
+  instalation.
+
+=== `preeseed.cfg`
+
+TBD
+
+// vim: set colorcolumn=80 textwidth=80 spell spelllang=en_us :

@@ -1,0 +1,408 @@
+= Directory Structure
+:author: Urs Roesch
+:email: roesch@puzzle.ch
+:icons: font
+ifdef::env-gitlab[]
+:git-base-url: https://gitlab.com
+endif::env-gitlab[]
+ifdef::env-github[]
+:git-base-url: https://github.com/
+:tip-caption: :bulb:
+:note-caption: :information_source:
+:important-caption: :heavy_exclamation_mark:
+:caution-caption: :fire:
+:warning-caption: :warning:
+endif::[]
+
+The directory structure of the project contains quite a few elements. 
+About a third of them are volatile directories which can be removed at any 
+time but for the sake of completenes and for troubleshooting purposes are still
+listed here.
+
+== Directory Structure Overview
+
+[source]
+----
+<project root>
+  ├── artifacts <1>
+  │   └── qemu
+  │       └── ubuntu_22.raw
+  │   
+  ├── docker <2>
+  │   └── docker-packer 
+  │   
+  ├── documentation <3>
+  │   └── ... .adoc
+  │   
+  ├── http <3>
+  │   ├── ubuntu_22.04
+  │   │   ├── meta-data
+  │   │   └── user-data
+  │   └── ...
+  │   
+  ├── images <4>
+  │   ├── ubuntu_22.04.1-server-efi.qcow2
+  │   ├── ubuntu_22.04.1-server-efi.vmdk
+  │   └── ...
+  │   
+  ├── install <5>
+  │   └── ...
+  │   
+  ├── iso <6>
+  │   ├── ubuntu_22.04
+  │   │   ├── ubuntu-22.04.1-live-server-amd64.iso
+  │   │   ├── ubuntu-22.04.1-live-server-amd64.iso.lock
+  │   │   ├── ubuntu-22.04.1-live-server-amd64.iso.sha256
+  │   └── ...
+  │   
+  ├── lib <7>
+  │   ├── packer
+  │   │   ├── host.rb
+  │   │   ├── iso.rb
+  │   │   └── variables.rb
+  │   ├── packer.rb
+  │   └── password_factory.rb
+  │   
+  ├── logs <8>
+  │   └── ubuntu_22.10.log
+  │   
+  ├── packer <9>
+  │   ├── common.auto.pkrvars.hcl
+  │   ├── linux_build.pkr.hcl
+  │   ├── linux_sources.pkr.hcl
+  │   ├── ubuntu_22.04.1.pkrvars.hcl
+  │   ├── variables.pkr.hcl
+  │   └── ...
+  │   
+  ├── provisioners <10>
+  │   └── ...
+  │   
+  ├── Rakefile <11>
+  │   
+  ├── scripts <12>
+  │   ├── convert-diskimage.sh
+  │   └── qemu-runner.sh
+  │   
+  └── templates <13>
+      ├── ubuntu_20.04
+      │   ├── meta-data.erb
+      │   └── user-data.erb
+      ├── ubuntu_22.04 -> ubuntu_20.04
+      └── ...
+----
+<1> `artifacts` volatile directory where packer is storing its work disks.
+<2> `docker` a git submodule pointing to {git-base-url}/uroesch/docker-packer.
+<3> `documentation` holds the documentation source file written in Asciidoctor.
+<4> `http` volatile directory used to store the packer configuration files
+  used during installation such as `kickstart.cfg` or `user-data`.
+<5> `images` is a volative directory holding all the images resulting from the
+  build process.
+<6> `install` contains the novnc files used to run as a service. Only required
+  when not building with docker.
+<7> `lib` contains a few Ruby libraries required by the `Rakefile`.
+<8> `logs` volatile directory storing the log from the latest build.
+<9> `packer` contains the whole packer configuration split in various both
+  common and os specific ones.
+<10> `provisioners` a git submodule pointing to the Ansible provisioner.
+<11> `Rakefile` containing the build instructions create an OS image.
+<12> `scripts` contains custom scripts and helpers for post processing and
+  debugging.
+<13> `templates` holds the `kickstart.cfg` and `user-data` ERB templates.
+
+
+== Details
+
+=== `artificats`
+
+Is the directory where `packer` is storing the working disk of the current
+bulid. When a `packer` build process is prematurely is interupted or fails
+uncontrolled, disk images may remain and block the same OS build from running
+again. In such an occurrence the whole directory can be removed. 
+
+[NOTE]
+The `docker-packer` wrapper script creates a uniq `artifacts` directory for each
+build and removes and cleans it up completly when finished.
+
+=== `docker`
+
+Is only mentioned here because the `docker-packer` shell script wrapper around
+the build process is located in there. The `docker-packer` script creates a
+temprary artifiacts directory and mounts it inside the docker container. All the
+other directories such as `http`, `iso`, `templates` among others are also
+mounted. Additionally the novnc script is being spawned to provide a way to
+monitor the progress of the build via a websocket on a headless build host.
+
+
+=== `documentation`
+
+Contains the projects documentation in the form of asciidoc files. Asciidoc
+allows for easy inclusion of various graphics libraries and can convert the
+content into an array of formats such but not limited to `HTML` and `PDF`. 
+
+=== `http`
+
+[source]
+----
+<project root>
+  │   
+ ... 
+  │   
+  ├── http
+  │   ├── rocky_9
+  │   │   └── kickstart.cfg
+  │   │   
+  │   └── ubuntu_22.04
+ ...      ├── meta-data
+          └── user-data
+----
+
+The `http` directory is a volatile directory which can be removed befor each
+build it is recreated before the buld by the `Rakefile` script. 
+
+
+Under the `http` directory a sub directory is created for each operating system
+variant. E.g for a Rocky 9 the directory name is `rocky_9` and contains the
+`kickstart.cfg` file. For Ubuntu 22.04 the name of the directory is 
+`ubuntu_22.04` and contains the subiquity files `meta-data` and `user-data`.
+
+
+=== `images`
+
+[source]
+----
+<project root>
+  │   
+ ... 
+  │   
+  ├── images
+  │   ├── rocky_9.1-server-efi.qcow2
+  │   ├── rocky_9.1-server-efi.vmdk
+  │   ├── ...
+  │   ├── ubuntu_22.04.1-server-efi.qcow2
+  │   ├── ubuntu_22.04.1-server-efi.vmdk
+  │   └── ...
+  │   
+ ... 
+----
+
+In the `images` directory the images are stored after a successful build. 
+
+The file name of each image is using 4 distinct properties delimited by a hyphen
+`-` 
+
+Release::
+  Distribution name and full release version e.g. `rocky` for distribution name
+  and `9.1` for major and minor release version. Or `ubuntu` and `22.04.1` as
+  for an Ubuntu image.
+
+Disk Layout::
+  The second field is the disk layout used for the images. The default is 
+  `server` which uses the default layout of the distribution. There are other
+  options such as `pcidss` which have to specified at build time.
+  To set the disk layout to something other than `server` provide the option
+  `TARGET=pcidss` option when building. 
+
+Firmware::
+  Field number 3 is the firmare used during the build. This defaults to `efi` 
+  the only other options is `bios`.
+  To set the build to BIOS provide the option `FIRMWARE=bios` when building.
+
+Target Platform::
+  The last indicator is the file extension. There are two tiers of platforms.
+  The `.qcow2` extension is used for the stage 1 base build which is then used
+  to build the stage 2 images such as VMware, Hyper-V and Azure.
+  Currently there are 3 stage 2 extensions.
+  * `.vmdk` for VMware / Vsphere deployments.
+  * `.vhdx` for Hyper-V hypervisors.
+  * `.vhd` for deployments in the Azure cloud.
+
+
+=== `install`
+
+Contains a few files for running novnc as systemd service on the host. This is
+the build is not done via the docker-packer script which has this functionality
+built in. 
+
+=== `iso`
+
+[source]
+----
+<project root>
+  │   
+ ... 
+  │   
+  ├── iso
+  │   ├── rocky_9
+  │   │   ├── Rocky-9.1-x86_64-dvd.iso
+  │   │   ├── Rocky-9.1-x86_64-dvd.iso.lock
+  │   │   ├── Rocky-9.1-x86_64-dvd.iso.sha256
+  │   │   └── ...
+  │   │   
+  │   ├── ubuntu_22.04
+  │   │   ├── ubuntu-22.04.1-live-server-amd64.iso
+  │   │   ├── ubuntu-22.04.1-live-server-amd64.iso.lock
+  │   │   ├── ubuntu-22.04.1-live-server-amd64.iso.sha256
+  │   │   └── ...
+  │   │   
+  │   └── ...
+  │   
+ ... 
+----
+
+Per default the `iso` directory only contains sub directories for each OS via
+it's distribution name and the major release number e.g. `rocky_9` or
+`ubuntu_22.04`. 
+
+Initially each sub directory only contains the SHA256 sum file of the ISO image
+used for the installation. During the first run the ISO file is downloaded and
+compared with the checksum. Consecutive builds then only do the checksum check
+against the already downloaded `.iso` file.
+
+[NOTE]
+Distributions where the ISO file is not freely available such as Red Hat
+Enterprise Linux (RHEL) or SUSE Linux Enterprise (SLE) must be downloaded
+manually and put into the correct sub directory within the tree.
+
+
+=== `lib`
+
+Is where the ruby libraries are located used to help with determining a few
+facts about the environment of the build hosts among other things. Generally
+this directory should not be touched or changed at all.
+
+=== `logs`
+
+[source]
+----
+<project root>
+  │   
+ ... 
+
+  │   
+  ├── logs
+  │   ├── rocky_9.log
+  │   ├── ...
+  │   └── ubuntu_22.10.log
+  │   
+ ... 
+----
+
+The build logs all actions in verbose mode into the `log` directory. Each OS has
+a dedicated log file base on the distribution name and the major version. E.g
+`rocky_9.log` or `ubuntu_22.04.log`. The log file is overwritten with each
+consecutive build. In case of an issue the log file has to be analyzed before
+starting the build again.
+
+Removing the `log` directory has not consequences. With each build it is
+recreated. 
+
+=== `packer`
+
+[source]
+----
+<project root>
+  │   
+ ... 
+  │   
+  ├── packer
+  │   ├── common.auto.pkrvars.hcl
+  │   ├── linux_build.pkr.hcl
+  │   ├── linux_sources.pkr.hcl
+  │   ├── rocky_9.1.pkrvars.hcl
+  │   ├── ...
+  │   ├── ubuntu_22.04.1.pkrvars.hcl
+  │   ├── ...
+  │   ├── variables.pkr.hcl
+  │   └── ...
+  │   
+ ... 
+----
+
+Within the `packer` directory are all the instructions for the build contained.
+There are 3 type of files which govern the build
+
+`common.auto.pkrvars.hcl`::
+  Is a packer variable file which holds the common parameters used for all OS
+  builds such as disk size and ssh passwords for the provisioner login.
+
+`linux_build.pkr.hcl`::
+  Holds the instructions how to build each of the target platforms inlcuding the
+  base build. The build file sports 3 components for the workflow these are:
+  * `build` via the `source` instructions
+  * `provisioner` triggering the post installation process via Ansible.
+  * `post-processor` converting the image from `qcow2` into the target format.
+
+`linux_sources.pkr.hcl`::
+  Defines the two QEMU build stages. Namely stage 1 or base build and the the
+  stage 2 builds for hyper visor or cloud specific builds. 
+  More information can be viewed in the 
+  https://developer.hashicorp.com/packer/plugins/builders/qemu[
+  packer documentation for QEMU
+  ]
+
+`<distro_N.N>.pkrvars.hcl`::
+  Contains the distribution specific variables used for the build such as ISO
+  file name or minor and major version numbers.
+
+`variables.pkr.hcl`::
+  Each variable in packer has to be defined with a type and possibly a
+  description. The variables.pkr.hcl contains both variable types for the `var`
+  and `local` prefix.
+
+=== `provisioners`
+
+Contains the Ansible roles and playbooks for the post installation steps. This
+directory is generally a git submodule pointing to an other repository.
+
+=== `Rakefile`
+
+Is the file used to start an OS build and is invoked with the `rake` command.
+
+=== `scripts`
+
+Currently holds two helper scripts one to convert the disk images in the
+post-processor step called `convert-diskimage.sh`. Addtionally there is the
+`qemu-runner.sh` script which can be used for debugging base images under the
+`images` directory or start ISO files found under the `iso` directory.
+
+
+=== `templates`
+
+[source]
+----
+<project root>
+  │   
+ ... 
+  │   
+  ├── templates
+  │   ├── rocky_9
+  │   │   └── kickstart.cfg.erb
+  │   ├── ...
+  │   │
+  │   ├── rhel_9 -> rocky_9
+  │   │
+  │   ├── ubuntu_20.04
+  │   │   ├── meta-data.erb
+  │   │   └── user-data.erb
+  │   │
+  │   ├── ubuntu_22.04 -> ubuntu_20.04
+  │   │
+  │   └── ...
+  │   
+ ... 
+----
+
+Under the `templates` directory the OS specific build instructions are stored in
+the form of ERB templates. Before each build the templates are parsed, populated
+with the appropriate values and put into the `http` directory for packer to pass
+it to the build process.
+
+To minimize duplication only major Red Hat releases get a directory named after
+the distribution and the major release number. All derivatives such as
+almalinux, rocky or oraclelinux are symlinked to the original directory.
+
+For Ubuntu releases the instructions can be shared among major release if the
+same installation technology such as subiquity is used. E.g for Ubuntu 20.04 and
+Ubuntu 22.04. 
+
+// vim: set colorcolumn=80 textwidth=80 spell spelllang=en_us :
