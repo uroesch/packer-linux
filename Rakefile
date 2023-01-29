@@ -12,7 +12,7 @@ require 'password_factory'
 # -----------------------------------------------------------------------------
 # Globals
 # -----------------------------------------------------------------------------
-VERSION        = '0.11.0'
+VERSION        = '0.12.0'
 TEMPLATE_DIR   = 'templates'
 PACKER_HCL_DIR = 'packer'
 BUILD          = Regexp.new(ENV.fetch('BUILD', '.*'))
@@ -24,11 +24,6 @@ PACKER_LOG     = ENV.fetch('PACKER_LOG', 1)
 LOG_DIR        = 'logs'
 ISO_DIR        = 'iso'
 
-Rake::FileList["#{PACKER_HCL_DIR}/*.pkrvars.hcl"].each do |hcl|
-  basename = hcl.pathmap('%n').ext
-  task = Rake::Task.define_task("build:#{basename}-server-efi")
-  task.add_description("#{basename} build")
-end
 
 # -----------------------------------------------------------------------------
 # Classes
@@ -47,9 +42,18 @@ end
 # -----------------------------------------------------------------------------
 # Methodds
 # -----------------------------------------------------------------------------
+def pkrvars_files(mode = 'all')
+  files = Rake::FileList["#{PACKER_HCL_DIR}/*.pkrvars.hcl"]
+  case mode
+  when 'ex_auto' then files.delete_if { |x|  x =~ %r{\.auto\.} }
+  when 'only_auto' then p files.select { |x|  x =~ %r{\.auto\.} }
+  else files
+  end
+end
+
 def destination_dir
   dirs = []
-  Rake::FileList["#{PACKER_HCL_DIR}/*.pkrvars.hcl"].each do |hcl|
+  pkrvars_files.each do |hcl|
     vars = Packer::Variables.from(hcl)
     dirs << vars.fetch('destination_dir', [])
   end
@@ -67,8 +71,7 @@ def override_variables(config)
 end
 
 def parse_auto_config
-  hcl_files = Rake::FileList["#{PACKER_HCL_DIR}/*.auto.pkrvars.hcl"]
-  hcl_files.inject({}) do |config, hcl_file|
+  pkrvars_files('only_auto').inject({}) do |config, hcl_file|
     config.merge(Packer::Variables.from(hcl_file))
   end
 end
@@ -158,14 +161,13 @@ namespace :clean do
     rm_rf LOG_DIR
   end
 
-  desc 'Clean build cache'
+  desc "Clean build cache"
   task :build_cache do
     (destination_dir + %w( packer_cache tmp http)).each do |dir|
       rm_rf dir
     end
   end
 end
-
 
 namespace :install do
   desc "Install novnc systemd service"
@@ -195,12 +197,44 @@ end
 namespace :iso do
   desc 'List all ISO urls from the packer variable files'
   task :list_urls do
-    Rake::FileList["#{PACKER_HCL_DIR}/*.pkrvars.hcl"].each do |hcl|
+    pkrvars_files('ex_auto').each do |hcl|
       config = Packer::Variables.from(hcl)
       url    = File.join(config.values_at('iso_base_url', 'iso_file'))
       puts url if url.start_with?(%r{https?://})
     end
   end
+end
+
+namespace :scaffold do
+  task :copy_from do
+    version = ENV.fetch('VERSION', false)
+    name    = ENV.fetch('NAME', false)
+    from    = ENV.fetch('FROM', false)
+
+    [version, name, from].select { |x| ! x }.count != 0
+
+    basename = [name, version].join('_')
+    cd PACKER_HCL_DIR do
+      cp "#{from}.pkrvars.hcl", "#{basename}.pkrvars.hcl"
+    end
+
+    cd TEMPLATE_DIR do
+      ln_s from, basename
+    end
+
+    cd ISO_DIR do
+      mkdir basename
+    end
+  end
+end
+
+# -----------------------------------------------------------------------------
+# Prerequisites
+# -----------------------------------------------------------------------------
+pkrvars_files('ex_auto').each do |hcl|
+  basename = hcl.pathmap('%n').ext
+  task = Rake::Task.define_task("build:#{basename}-server-efi")
+  task.add_description("#{basename} build")
 end
 
 # -----------------------------------------------------------------------------
@@ -212,7 +246,7 @@ task :default => :build
 desc "Only the various configuration files"
 task :config do
   @var_files = []
-  Rake::FileList["#{PACKER_HCL_DIR}/*.pkrvars.hcl"].each do |hcl|
+  pkrvars_files('ex_auto').each do |hcl|
     next unless hcl =~ BUILD
     assemble_config(hcl)
     @var_files.push(hcl)
