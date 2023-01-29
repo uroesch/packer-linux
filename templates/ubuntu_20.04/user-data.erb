@@ -9,9 +9,8 @@ autoinstall:
     realname: ubuntu
     username: <%= config['ssh_username'] %>
   keyboard:
-    layout: en
-    variant: us
-  locale: en_US.UTF8
+    layout: <%= config['keyboard'] %>
+  locale: <%= config['locale'] %>
   refresh-installer:
     update: no
   network:

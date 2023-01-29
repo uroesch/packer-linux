@@ -114,6 +114,18 @@ variable "ssh_password" {
   description = "SSH password used by provisioners."
 }
 
+variable "locale" {
+  type        = string
+  sensitive   = true
+  description = "Locale of to be used during the installation."
+}
+
+variable "keyboard" {
+  type        = string
+  sensitive   = true
+  description = "The keyboard layout to be used on the console."
+}
+
 variable "ssh_wait_timeout" {
   type        = string
   default     = "30m"
