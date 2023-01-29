@@ -1,16 +1,15 @@
 # -----------------------------------------------------------------------------
 # Ubuntu 20.04 Packer Variable File
 # -----------------------------------------------------------------------------
-iso_checksum      = "sha256:874452797430a94ca240c95d8503035aa145bd03ef7d84f9b23b78f3c5099aed"
-iso_file          = "ubuntu-22.10-live-server-amd64.iso"
-iso_base_url      = "https://releases.ubuntu.com/kinetic/"
+http_dir          = "http"
+iso_checksum      = "file:iso/ubuntu_20.04/ubuntu-20.04-live-server-amd64.iso.sha256"
+iso_file          = "ubuntu-20.04-live-server-amd64.iso"
+iso_base_url      = "https://old-releases.ubuntu.com/20.04/"
 name              = "ubuntu"
-repo_url          = ""
 ssh_username      = "ubuntu"
-target            = "server"
-version           = "22.10"
+version           = "20.04"
 version_minor     = ""
-code_name         = "kinetic"
+code_name         = "focal"
 answer_file       = ""
 bios_boot_command = [
   "<enter><enter><f6><esc><wait>",
