@@ -2,6 +2,8 @@
 :author: Urs Roesch
 :email: roesch@puzzle.ch
 :icons: font
+:kroki-fetch-diagram: true
+:imagesdir: documentation/images
 ifndef::env-github,env-gitlab[]
 :source-highlighter: rouge
 endif::env-github,env-gitlab[]

@@ -2,6 +2,8 @@
 :author: Urs Roesch
 :email: roesch@puzzle.ch
 :icons: font
+:kroki-fetch-diagram: true
+:imagesdir: images
 ifdef::env-gitlab[]
 :git-base-url: https://gitlab.com
 endif::env-gitlab[]
@@ -15,7 +17,7 @@ ifdef::env-github[]
 endif::[]
 
 
-[plantuml,workflow,svg]
+[plantuml,target=workflow,format=svg]
 ....
 @startuml
 !include C4_Context.puml
