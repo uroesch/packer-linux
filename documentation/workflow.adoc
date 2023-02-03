@@ -17,8 +17,8 @@ ifdef::env-github[]
 endif::[]
 
 
-ifdef::env-gitlab[image::workflow-44bcf5f0dbfc6daaa01b40d50fa0f9e26dd511211fcd7bf0987852c8f408cc89.svg]
-ifndef::env-gitlab[]
+ifdef::env-github[image::workflow-44bcf5f0dbfc6daaa01b40d50fa0f9e26dd511211fcd7bf0987852c8f408cc89.svg]
+ifndef::env-github[]
 [plantuml,target=workflow,format=svg]
 ....
 @startuml
@@ -53,7 +53,7 @@ Rel(packer, images_dir, "Stores images")
 
 @enduml
 ....
-endif::env-gitlab[]
+endif::env-github[]
 
 
 
