@@ -17,6 +17,8 @@ ifdef::env-github[]
 endif::[]
 
 
+ifdef::env-gitlab[image::workflow-44bcf5f0dbfc6daaa01b40d50fa0f9e26dd511211fcd7bf0987852c8f408cc89.svg]
+ifndef::env-gitlab[]
 [plantuml,target=workflow,format=svg]
 ....
 @startuml
@@ -25,7 +27,6 @@ endif::[]
 !define FONTAWESOME https://raw.githubusercontent.com/tupadr3/plantuml-icon-font-sprites/master/font-awesome-5/
 !include FONTAWESOME/terminal.puml
 !include FONTAWESOME/users.puml
-
 
 title Components required for building an OS image
 
@@ -52,7 +53,7 @@ Rel(packer, images_dir, "Stores images")
 
 @enduml
 ....
-
+endif::env-gitlab[]
 
 
 
