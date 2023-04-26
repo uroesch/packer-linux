@@ -1,0 +1,78 @@
+---
+name: Bug Report
+description: linux-packer bug report 
+title: "[Issue]: "
+labels: 
+  - bug
+assignees:
+  - uroesch
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out a bug report for linux-packer.
+      
+  - type: textarea
+    id: what-went-wrong
+    attributes:
+      label: 'What went wrong?'
+      description: What went wrong during the build. Explain and paste commands which where used.
+      value: Commands, description of the problem, etc...
+    validations:
+      required: true
+
+  - type: input
+    id: build-host
+    attributes:
+      label: Specify the build host system.
+      description: What is your operating system.
+      placeholder: ex. Ubuntu 20.04.5
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: docker-build
+    attributes:
+      label: Are you building with docker?
+      description: If you are using docker to build the Image select the appropriate box.
+      options:
+        - label: 'Yes'
+    validations:
+      required: true
+        
+  - type: dropdown
+    id: target-os
+    attributes:
+      label: Operating System with Errors
+      description: Which operation system is affected by the issue?
+      multiple: true
+      options:
+        - All
+        - Ubuntu 20.04.x (focal)
+        - Ubuntu 22.04.x (jammy)
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: target-image
+    attributes:
+      label: Which generated disk image is not working?
+      description: Which generated disk image has an issue?
+      multiple: true
+      options:
+        - Not applicable
+        - All
+        - QCOW2 (KVM, QEMU, Proxmox)
+        - VMDK (vSphere, ESXi)
+        - VHD (Azure)
+        - VHDX (Hyper-V)
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log output
+      description: Please copy and paste any relevant log output from the logs directory. 
+      render: plain

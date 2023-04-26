@@ -1,0 +1,45 @@
+---
+name: Documentation Issue
+description: linux-packer documentation issue
+title: "[Documentation]: "
+labels: 
+  - documentation
+assignees:
+  - uroesch
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out a documentation issue for linux-packer.
+      
+  - type: textarea
+    id: what-went-wrong
+    attributes:
+      label: 'What is wrong in the documentaion?'
+      description: What went wrong during the build. Explain and paste commands which where used.
+      value: Description of the issue or addtion in the documentation.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: section
+    attributes:
+      label: Affected Section
+      description: Which section is affected?
+      multiple: true
+      options:
+        - None of the below
+        - Project Goals
+        - Project Scope
+        - Supported Operating Systems
+        - Features
+        - Dependencies 
+        - Howto
+        - More Documents
+        - Build changes
+        - Directory Structure Overview
+        - Details
+        - Packer Files 
+        - Template Files
+    validations:
+      required: true

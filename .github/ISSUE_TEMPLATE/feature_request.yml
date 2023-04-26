@@ -1,0 +1,35 @@
+---
+name: Feature Request
+description: linux-packer feature request
+title: "[Request]: "
+labels: 
+  - enhancement
+assignees:
+  - uroesch
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out a feature request for linux-packer.
+      
+  - type: textarea
+    id: funtionality
+    attributes:
+      label: 'What would you like to see implemented?'
+      description: Descript the feature you require for your builds.
+      value: Implement feature ....
+    validations:
+      required: true
+
+  - type: dropdown
+    id: target-os
+    attributes:
+      label: Target Operating System 
+      description: Which operation system should get the feature?
+      multiple: true
+      options:
+        - All
+        - Ubuntu 20.04.x (focal)
+        - Ubuntu 22.04.x (jammy)
+    validations:
+      required: true
