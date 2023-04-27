@@ -1,3 +1,6 @@
 [submodule "docker"]
 	path = docker
-	url = https://github.com/uroesch/docker-packer
+	url = https://github.com/uroesch/docker-packer.git
+[submodule "provisioners"]
+	path = provisioners
+	url = https://github.com/uroesch/ansible-packer-provisioners.git
