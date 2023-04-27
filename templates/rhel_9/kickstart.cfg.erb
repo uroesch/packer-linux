@@ -1,0 +1,74 @@
+<%= header %>
+# https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html/performing_an_advanced_rhel_installation/kickstart-commands-and-options-reference_installing-rhel-as-an-experienced-user
+
+eula --agreed
+cdrom
+<% if config.fetch('appstream_url', '').length > 0  %>
+repo --name="AppStream" --baseurl="<%= config['appstream_url'] %>"
+<% end %>
+text
+firstboot --disable
+keyboard --vckeymap="us" --xlayouts="us"
+lang en_US.UTF-8
+network --bootproto=dhcp --device=link --activate
+network --hostname=<%= config['dist_name'].gsub(%r{_}, '-') %>.localdomain
+rootpw <%= config['ssh_password'] %>
+selinux --enforcing
+skipx
+timezone Europe/Zurich --utc
+bootloader --location=mbr --append="crashkernel=auto"
+zerombr
+clearpart --all --initlabel --disklabel=gpt
+# Reboot after successful installation
+reboot
+# -----------------------------------------------------------------------------
+# Partition
+# -----------------------------------------------------------------------------
+<%= config['disklayout']['kickstart'] %>
+
+%packages --ignoremissing
+# dnf group info minimal-environment
+@^minimal-environment
+sudo
+cloud-init
+# Exclude unnecessary firmwares
+-iwl*firmware
+%end
+
+%post --logfile=/mnt/sysimage/root/ks-post.log
+# Update time
+/usr/sbin/ntpdate -bu 0.fr.pool.ntp.org 1.fr.pool.ntp.org
+
+sed -i 's/^.*requiretty/#Defaults requiretty/' /etc/sudoers
+sed -i 's/rhgb //' /etc/default/grub
+
+# Disable consistent network device naming
+/usr/bin/ln -s /dev/null /etc/udev/rules.d/80-net-name-slot.rules
+
+# sshd PermitRootLogin yes / UseDNS no
+sed -i \
+  -e 's/#\(PermitRootLogin\).*/\1 yes/g' \
+  -e 's/#\(UseDNS\).*/\1 no/g' \
+  /etc/ssh/sshd_config
+
+# Enable NetworkManager, sshd and disable firewalld
+#/usr/bin/systemctl enable NetworkManager
+/usr/bin/systemctl enable sshd
+#/usr/bin/systemctl disable firewalld
+
+# Need for host/guest communication
+/usr/bin/systemctl enable qemu-guest-agent
+
+# Update all packages
+#/usr/bin/yum -y update
+#/usr/bin/yum clean
+
+# Not really needed since the kernel update already did this. Furthermore,
+# running this here reverts the grub menu to the current kernel.
+#grub2-mkconfig -o /boot/grub2/grub.cfg
+
+# Remove inst.ks= entries from grub or the machine wont boot (Rocky 9 only)
+[ -d /boot/loader/entries ] && \
+  /usr/bin/grep -rl inst.ks= /boot/loader/entries | xargs rm
+
+%end
