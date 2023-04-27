@@ -28,6 +28,7 @@ body:
       description: Which operation system should get the feature?
       multiple: true
       options:
+        - Not applicable
         - All
         - Ubuntu 20.04.x (focal)
         - Ubuntu 22.04.x (jammy)
