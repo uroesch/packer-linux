@@ -3,7 +3,8 @@
 *.html
 *.pdf
 **/.access^
-/iso/**/*.iso*
+/iso/**/*.iso
+/iso/**/*.lock
 /images
 /logs
 /artifacts

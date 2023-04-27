@@ -48,9 +48,13 @@ body:
       multiple: true
       options:
         - All
+        - AlmaLinux 8.x
         - CentOS 7.x
         - Oracle Linux 7.x
+        - Oracle Linux 8.x
         - Red Hat Enterprise Linux 7.x
+        - Red Hat Enterprise Linux 8.x
+        - Rocky Linux 8.x
         - Ubuntu 20.04.x (focal)
         - Ubuntu 22.04.x (jammy)
         - Ubuntu 22.10.x (kinetic)
