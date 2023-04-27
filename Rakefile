@@ -12,8 +12,7 @@ require 'password_factory'
 # -----------------------------------------------------------------------------
 # Globals
 # -----------------------------------------------------------------------------
-VERSION        = '0.12.0'
-TEMPLATE_DIR   = 'templates'
+VERSION        = '0.13.0'
 PACKER_HCL_DIR = 'packer'
 BUILD          = Regexp.new(ENV.fetch('BUILD', '.*'))
 ONLY           = ENV.fetch('ONLY', '*')
@@ -23,6 +22,8 @@ HEADLESS       = ENV.fetch('HEADLESS', true)
 PACKER_LOG     = ENV.fetch('PACKER_LOG', 1)
 LOG_DIR        = 'logs'
 ISO_DIR        = 'iso'
+TEMPLATE_DIR   = 'templates'
+DISKLAYOUT_DIR = File.join(TEMPLATE_DIR, 'disklayouts', TARGET)
 
 
 # -----------------------------------------------------------------------------
@@ -81,6 +82,7 @@ def assemble_config(hcl_file)
     config = override_variables(config)
     iso_file = File.join(ISO_DIR, config['dist_name'], config['iso_file'])
     config['volume_id'] = Packer::ISO.volume_id(iso_file)
+    config = Packer::Disklayout.load(DISKLAYOUT_DIR, config)
     environment(config)
     write_config(config)
     config
@@ -95,6 +97,7 @@ def header(file)
     # #{line}
     HEADER
 end
+
 
 def write_config(config)
   dir  = config['dist_name']

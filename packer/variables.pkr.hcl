@@ -15,7 +15,7 @@ variable "ram" {
 
 variable "disk_size" {
   type        = number
-  default     = "40000"
+  default     = "20000"
   description = "Size in MB of the OS root disk to be built."
   validation {
     condition     = can(var.disk_size >= 10000)
@@ -151,6 +151,12 @@ variable "vg_name" {
   type        = string
   default     = "vg_root"
   description = "LVM volume group name to use for the installation."
+}
+
+variable "fstype" {
+  type        = string
+  default     = "xfs"
+  description = "Filesystem type to use for all the linux mounts."
 }
 
 variable "code_name" {
