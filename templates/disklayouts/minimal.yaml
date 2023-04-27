@@ -1,0 +1,9 @@
+partitions:
+  boot: { mount_point: /boot,     size: 2000 }
+  efi:  { mount_point: /boot/efi, size: 500 }
+  lvm:  { mount_point: /boot/efi, size: -1  }
+layout:
+  root: { mount_point: /,      size: 10000 }
+  swap: { mount_point: '',     size: 4000 } 
+  home: { mount_point: /home,  size: 10000 }
+  home: { mount_point: /,      size: 10000 }

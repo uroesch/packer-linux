@@ -30,7 +30,11 @@ body:
       options:
         - Not applicable
         - All
+        - CentOS 7.x
+        - Oracle Linux 7.x
+        - Red Hat Enterprise Linux 7.x
         - Ubuntu 20.04.x (focal)
         - Ubuntu 22.04.x (jammy)
+        - Ubuntu 22.10.x (kinetic)
     validations:
       required: true

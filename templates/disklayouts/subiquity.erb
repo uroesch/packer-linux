@@ -1,0 +1,31 @@
+  storage:
+    version: 1
+    swap:
+      size: 0
+    config:
+    # Label
+    - { type: disk, id: disk-0, name: '', path: <%= disk_path %>, preserve: false, ptable: gpt, wipe: superblock <%= config['firmware'] == 'bios' ? ', grub_device: true' : '' %> }
+    # partitioning 
+    - { type: partition, device: disk-0, preserve: false, flag: bios_grub, id: part-biosgrub, number: 1, size: 1M }
+    - { type: partition, device: disk-0, preserve: false, flag: '',        id: part-boot,     number: 2, size: <%= partition['boot']['size'] %>M, wipe: superblock }
+    - { type: partition, device: disk-0, preserve: false, flag: boot,      id: part-bootefi,  number: 3, size: <%= partition['efi']['size'] %>M,  wipe: superblock <%= config['firmware'] == 'efi' ? ', grub_device: true' : '' %> }
+    - { type: partition, device: disk-0, preserve: false, flag: '',        id: part-lvm,      number: 4, size: -1,    wipe: superblock }
+    # LVM VG
+    - { devices: [ part-lvm ],  id: vg-<%= vg_name %>,  name: <%= vg_name %>, preserve: false, type: lvm_volgroup }
+    # LVM LV
+<% layout.each do |name, data| %>
+    - { type: lvm_partition, volgroup: vg-<%= vg_name %>, preserve: false, id: lv-<%= name %>, name: <%= name %>, size: <%= data['size'] %>M }
+<% end %>
+<% layout.each do |, data| %>
+    # FS
+    - { type: format, fstype: <%= fstype %>,   preserve: false, id: format-boot,        volume: part-boot }
+    - { type: format, fstype: fat32, preserve: false, id: format-bootefi,     volume: part-bootefi,  label: ESP }
+<% layout.each do |name, data| %>
+    - { type: format, fstype: <%= name == 'swap' ? 'swap' : fstype %>,   preserve: false, id: format-<%= name %>,  volume: lv-<%= name %> }
+<% end %>
+    # Mount
+<% layout.each do |name, data| %>
+    - { type: mount, device: format-<%= name %>,        id: mount-<%= name %>,   path: <%= data['path'] %> }
+<% end %>
+    - { type: mount, device: format-boot,        id: mount-boot,         path: /boot } 
+    - { type: mount, device: format-bootefi,     id: mount-bootefi,      path: /boot/efi } 

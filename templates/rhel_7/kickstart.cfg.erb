@@ -1,0 +1,81 @@
+<%= header %>
+install
+<% if config['dist_name'] == 'rhel_7' %>
+cdrom
+<% else %>
+url --url="<%= config['repo_url'] %>"
+<% end %>
+lang en_US.UTF-8
+keyboard us
+rootpw --iscrypted <%= PasswordFactory.sha512(config['root_password']).hashed %>
+selinux --enforcing
+firewall --disabled
+#timezone UTC
+timezone Europe/Zurich --isUtc
+bootloader --append=" crashkernel=auto" --location=mbr --boot-drive=<%= config['disk_path'].split('/').last %>
+text
+skipx
+unsupported_hardware
+network --onboot yes --device eth0 --bootproto dhcp --ipv6=auto
+reboot
+# -----------------------------------------------------------------------------
+# Filesystem layout
+# -----------------------------------------------------------------------------
+<%= config['disklayout']['kickstart'] %>
+
+# -----------------------------------------------------------------------------
+# Packages
+# -----------------------------------------------------------------------------
+%packages --nocore --nobase --excludedocs
+@core --nodefaults
+qemu-guest-agent
+chrony
+sudo
+-aic94xx-firmware
+-alsa-firmware
+-alsa-lib
+-alsa-tools-firmware
+-btrfs-progs
+-iprutils
+-ivtv-firmware
+-iwl*firmware
+-plymouth*
+-wpa_supplicant
+<% if config['dist_name'] == 'oraclelinux_7' %>oraclelinux-release-el7<% end %>
+%end
+
+# -----------------------------------------------------------------------------
+# Post installation scripts
+# -----------------------------------------------------------------------------
+%post
+# Update time
+/usr/sbin/ntpdate -bu 0.fr.pool.ntp.org 1.fr.pool.ntp.org
+
+sed -i 's/^.*requiretty/#Defaults requiretty/' /etc/sudoers
+sed -i 's/rhgb //' /etc/default/grub
+
+# Disable consistent network device naming
+/usr/bin/ln -s /dev/null /etc/udev/rules.d/80-net-name-slot.rules
+
+# sshd PermitRootLogin yes / UseDNS no
+sed -i \
+  -e 's/#\(PermitRootLogin\).*/\1 yes/g' \
+  -e 's/#\(UseDNS\).*/\1 no/g' \
+  /etc/ssh/sshd_config
+
+# Enable NetworkManager, sshd and disable firewalld
+#/usr/bin/systemctl enable NetworkManager
+/usr/bin/systemctl enable sshd
+#/usr/bin/systemctl disable firewalld
+
+# Need for host/guest communication
+/usr/bin/systemctl enable qemu-guest-agent
+
+# Update all packages
+/usr/bin/yum -y update
+#/usr/bin/yum clean
+
+# Not really needed since the kernel update already did this. Furthermore,
+# running this here reverts the grub menu to the current kernel.
+#grub2-mkconfig -o /boot/grub2/grub.cfg
+%end
