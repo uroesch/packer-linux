@@ -1,9 +1,9 @@
 # -----------------------------------------------------------------------------
-# Ubuntu 20.04 Packer Variable File
+# Ubuntu 20.10 Packer Variable File
 # -----------------------------------------------------------------------------
 iso_checksum      = "sha256:874452797430a94ca240c95d8503035aa145bd03ef7d84f9b23b78f3c5099aed"
 iso_file          = "ubuntu-22.10-live-server-amd64.iso"
-iso_base_url      = "https://releases.ubuntu.com/kinetic/"
+iso_base_url      = "https://releases.ubuntu.com/22.10"
 name              = "ubuntu"
 repo_url          = ""
 ssh_username      = "ubuntu"

@@ -1,9 +1,9 @@
 # -----------------------------------------------------------------------------
-# Ubuntu 20.04 Packer Variable File
+# Ubuntu 22.04.1 Packer Variable File
 # -----------------------------------------------------------------------------
 iso_checksum      = "file:iso/ubuntu_22.04/ubuntu-22.04.1-live-server-amd64.iso.sha256"
 iso_file          = "ubuntu-22.04.1-live-server-amd64.iso"
-iso_base_url      = "https://releases.ubuntu.com/22.04/"
+iso_base_url      = "https://releases.ubuntu.com/22.04"
 name              = "ubuntu"
 ssh_username      = "ubuntu"
 version           = "22.04"

@@ -1,10 +1,10 @@
 # -----------------------------------------------------------------------------
-# Ubuntu 20.04 Packer Variable File
+# Ubuntu 20.04.5 Packer Variable File
 # -----------------------------------------------------------------------------
 http_dir          = "http"
 iso_checksum      = "file:iso/ubuntu_20.04/ubuntu-20.04.5-live-server-amd64.iso.sha256"
 iso_file          = "ubuntu-20.04.5-live-server-amd64.iso"
-iso_base_url      = "https://releases.ubuntu.com/20.04/"
+iso_base_url      = "https://releases.ubuntu.com/20.04"
 name              = "ubuntu"
 ssh_username      = "ubuntu"
 version           = "20.04"
