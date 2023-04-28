@@ -7,14 +7,15 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-set -x
 trap cleanup EXIT
 
 # -----------------------------------------------------------------------------
 # Global
 # -----------------------------------------------------------------------------
-declare -r VERSION=0.5.0
+declare -r VERSION=0.6.0
 declare -r SCRIPT=${0##*/}
+declare -r AUTHOR="Urs Roesch"
+declare -r LICENSE="MIT"
 declare -r BASE_DIR=$(readlink -f $(dirname ${0})/..)
 declare -r IMAGES_DIR=${BASE_DIR}/images
 declare -g IMAGE_PATH=${IMAGE_PATH:-}
@@ -31,7 +32,7 @@ function usage() {
   cat << USAGE
 
   Usage:
-    ${SCRIPT} -f <target-format> -n <image-name> -t <target>
+    ${SCRIPT} -f <target-format> -n <image-name> -t <target> -p <source-image>
 
   Options:
     -h | --help             This message
@@ -45,6 +46,34 @@ function usage() {
     -n | --name <name>      Name of the image e.g. ubuntu-20.04
     -p | --path <sourceimg> Path to the source image.
     -t | --target <target>  Target suffice e.g. server
+    -V | --version          Print version information and exit.
+
+  Description:
+    This script is converting disk images for virtual-machines. For
+    use in various platforms.
+    One can convert between any of the formats supported by qemu-img
+    and write them out.
+
+    Note: GCP images are write only.
+
+  Examples:
+
+    Convert from a qcow2 image to a vmdk on the command line.
+
+      ${SCRIPT} -f vmdk -n ubuntu_22.04.2 -t server -p images/ubu_22.04.qcow2
+
+    Will result in a file called images/ubuntu_22.04.2-server.vmdk
+
+
+    Convert from a qcow2 image to a vhd via environment variables.
+
+      FORMAT=vhd \\
+      DIST_NAME=ubuntu_22.04.2 \\
+      TARGET=server \\
+      IMAGE_PATH=images/ubuntu-22.04.qcow2 \\
+      ${SCRIPT}
+
+    Will also result in a file called images/ubuntu_22.04.2-server.vmdk
 
 USAGE
   exit ${exit_code}
@@ -53,11 +82,12 @@ USAGE
 function parse_options() {
   while (( ${#} > 0 )); do
     case ${1} in
-    -t|--target) shift; TARGET=${1};;
-    -n|--name)   shift; DIST_NAME=${1};;
-    -f|--format) shift; FORMATS+=( "${1}" );;
-    -p|--path)   shift; IMAGE_PATH="${1}";;
-    -h|--help)   usage 0;;
+    -t|--target)  shift; TARGET=${1};;
+    -n|--name)    shift; DIST_NAME=${1};;
+    -f|--format)  shift; FORMATS+=( "${1}" );;
+    -p|--path)    shift; IMAGE_PATH="${1}";;
+    -V|--version) version;;
+    -h|--help)    usage 0;;
     esac
     shift
   done
@@ -66,6 +96,12 @@ function parse_options() {
 function evaluate_options() {
   # convert the format to an array for
   FORMATS+=( ${FORMAT} )
+}
+
+function version() {
+  printf "%s v%s\nCopyright (c) %s\nLicense - %s\n" \
+    "${SCRIPT}" "${VERSION}" "${AUTHOR}" "${LICENSE}"
+  exit 0
 }
 
 function image_type() {
@@ -78,7 +114,6 @@ function image_type() {
   esac
 }
 
-
 function image_out() {
   local extension=${1} shift;
   echo "${IMAGES_DIR}/${DIST_NAME}-${TARGET}.${extension}"
@@ -88,7 +123,7 @@ function find_image() {
   local dist_name=${1}; shift;
   if [[ -n ${IMAGE_PATH} && -f ${IMAGE_PATH} ]]; then
     echo ${IMAGE_PATH}
-    return
+    return 0
   fi
   find ${IMAGES_DIR} -name "${dist_name}-${TARGET}.qcow2"
 }
@@ -157,8 +192,7 @@ function to_vmdk() {
   local dist_name=${1}; shift;
   local img_in=$(find_image ${dist_name})
   local img_out="$(image_out vmdk)"
-  convert_disk vmdk "${img_in}" "${img_out}" \
-    adapter_type=lsilogic,subformat=streamOptimized,compat6
+  convert_disk vmdk "${img_in}" "${img_out}" "$(vmdk::options)"
   touch --reference "${img_in}" "${img_out}"
 }
 
@@ -193,6 +227,33 @@ function convert_image() {
 
 function cleanup() {
   find ${IMAGES_DIR} -name "${DIST_NAME}-${TARGET}.raw" -delete
+}
+
+# -----------------------------------------------------------------------------
+# Qemu Image Section
+# -----------------------------------------------------------------------------
+function qemu-img::version() {
+  qemu-img --version | \
+    awk '{ split($3, v, "."); printf("%d%04d%04d", v[1], v[2], v[3]); exit }'
+}
+
+# -----------------------------------------------------------------------------
+# VMDK Section
+# -----------------------------------------------------------------------------
+function vmdk::options()  {
+  local -i desired_version=600020000
+  local -i current_version=$(qemu-img::version)
+  local -a options=(
+     adapter_type=lsilogic
+     subformat=streamOptimized
+  )
+  if (( ${current_version} >= ${desired_version} )); then
+    options+=( hwversion=7 )
+  else
+    options+=( compat6 )
+  fi
+  printf -v vmdk_options "%s," "${options[@]}"
+  printf "${vmdk_options%*,}"
 }
 
 # -----------------------------------------------------------------------------
