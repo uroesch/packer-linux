@@ -4,7 +4,7 @@
 firmware        = "efi"
 destination_dir = "artifacts"
 disk_path       = "/dev/vda"
-disk_size       = "20000"
+disk_size       = "60000"
 headless        = "true"
 http_dir        = "http"
 locale          = "en_US.UTF-8"

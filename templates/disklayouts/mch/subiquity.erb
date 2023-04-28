@@ -7,13 +7,13 @@
     - { type: disk, id: disk-0, name: '', path: <%= config['disk_path'] %>, preserve: false, ptable: gpt, wipe: superblock <%= config['firmware'] == 'bios' ? ', grub_device: true' : '' %> }
     # partitioning 
     - { type: partition, device: disk-0, preserve: false, flag: bios_grub, id: part-biosgrub, number: 1, size: 1M }
-    - { type: partition, device: disk-0, preserve: false, flag: '',        id: part-boot,     number: 2, size: 1000M, wipe: superblock }
+    - { type: partition, device: disk-0, preserve: false, flag: '',        id: part-boot,     number: 2, size: 2000M, wipe: superblock }
     - { type: partition, device: disk-0, preserve: false, flag: boot,      id: part-bootefi,  number: 3, size: 500M,  wipe: superblock <%= config['firmware'] == 'efi' ? ', grub_device: true' : '' %> }
     - { type: partition, device: disk-0, preserve: false, flag: '',        id: part-lvm,      number: 4, size: -1,    wipe: superblock }
     # LVM VG
     - { devices: [ part-lvm ],  id: vg-<%= config['vg_name'] %>,  name: <%= config['vg_name'] %>, preserve: false, type: lvm_volgroup }
     # LVM LV
-    - { type: lvm_partition, volgroup: vg-<%= config['vg_name'] %>, preserve: false, id: lv-root,        name: root,        size: 10000M }
+    - { type: lvm_partition, volgroup: vg-<%= config['vg_name'] %>, preserve: false, id: lv-root,        name: root,        size: 42000M }
     - { type: lvm_partition, volgroup: vg-<%= config['vg_name'] %>, preserve: false, id: lv-home,        name: home,        size: 500M }
     - { type: lvm_partition, volgroup: vg-<%= config['vg_name'] %>, preserve: false, id: lv-swap,        name: swap,        size: 4000M  }
     # FS
