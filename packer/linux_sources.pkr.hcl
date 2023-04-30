@@ -27,9 +27,9 @@ source "qemu" "linux_base_image" {
   ssh_wait_timeout       = var.ssh_wait_timeout
   ssh_handshake_attempts = "500"   # required for ubuntu 20.04
   ssh_pty                = "false" # required for ansible to work
+  firmware               = var.firmware_path[var.firmware]
   qemu_binary            = "/usr/bin/qemu-system-x86_64"
   qemuargs               = var.qemuargs
-  firmware               = var.firmware_path[var.firmware]
 }
 
 source "qemu" "linux_stage2" {
@@ -42,7 +42,7 @@ source "qemu" "linux_stage2" {
   disk_cache             = "none"
   disk_compression       = true
   disk_discard           = "unmap"
-  disk_interface         = "virtio"
+  disk_interface         = "scsi"
   use_backing_file       = false
   format                 = "qcow2"
   iso_checksum           = "none"
@@ -58,7 +58,11 @@ source "qemu" "linux_stage2" {
   ssh_wait_timeout       = "30m"
   ssh_handshake_attempts = "500"   # required for ubuntu 20.04
   ssh_pty                = "false" # required for ansible to work
-  qemu_binary            = "/usr/bin/qemu-system-x86_64"
-  qemuargs               = var.qemuargs
   firmware               = var.firmware_path[var.firmware]
+  qemu_binary            = "/usr/bin/qemu-system-x86_64"
+  qemuargs               = concat(var.qemuargs, [
+    ["-device", "virtio-scsi-pci,id=scsi" ],
+    ["-device", "scsi-hd,drive=scsi-disk" ],
+    ["-drive", "file=${var.destination_dir}/qemu/${local.dist_name}-${var.target}/packer-linux_stage2,id=scsi-disk,if=none,format=qcow2"]
+  ])
 }
