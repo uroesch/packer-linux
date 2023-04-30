@@ -2,7 +2,7 @@
 name: Feature Request
 description: linux-packer feature request
 title: "[Request]: "
-labels: 
+labels:
   - enhancement
 assignees:
   - uroesch
@@ -11,7 +11,7 @@ body:
     attributes:
       value: |
         Thanks for taking the time to fill out a feature request for linux-packer.
-      
+
   - type: textarea
     id: funtionality
     attributes:
@@ -24,11 +24,12 @@ body:
   - type: dropdown
     id: target-os
     attributes:
-      label: Target Operating System 
+      label: Target Operating System
       description: Which operation system should get the feature?
       multiple: true
       options:
         - Not applicable
+        - New OS definition
         - All
         - AlmaLinux 8.x
         - AlmaLinux 9.x
