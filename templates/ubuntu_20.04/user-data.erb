@@ -3,7 +3,7 @@ autoinstall:
   version: 1
   source:
     id: ubuntu-server-minimal
-  identity: 
+  identity:
     hostname: <%= config['code_name'] %>
     password: <%= PasswordFactory.sha512(config['ssh_password']).hashed %>
     realname: ubuntu
@@ -35,17 +35,16 @@ autoinstall:
     - >-
       test -d /sys/firmware/efi && /target/usr/bin/efibootmgr -o
       $(/target/usr/bin/efibootmgr | sed -n '/^Boot[0-9]*\* ubuntu/I{ s/[^0-9]//g; p }') || :
-    - curtin in-target -- /usr/sbin/update-grub 
+    - curtin in-target -- /usr/sbin/update-grub
 
   packages:
     - bc
     - curl
     - wget
     - openssh-server
-    - qemu-guest-agent
     - eject
   updates: security
 
   # grub:
     # reorder_uefi: true
-    # reorder_uefi_force_fallback: true  
+    # reorder_uefi_force_fallback: true
