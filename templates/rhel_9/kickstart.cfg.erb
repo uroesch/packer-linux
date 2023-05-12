@@ -12,7 +12,7 @@ keyboard --vckeymap="us" --xlayouts="us"
 lang en_US.UTF-8
 network --bootproto=dhcp --device=link --activate
 network --hostname=<%= config['dist_name'].gsub(%r{_}, '-') %>.localdomain
-rootpw <%= config['ssh_password'] %>
+rootpw --iscrypted <%= PasswordFactory.sha512(config['root_password']).hashed %>
 selinux --enforcing
 skipx
 timezone Europe/Zurich --utc
